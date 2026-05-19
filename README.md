@@ -1,6 +1,11 @@
 # pay.sh Agent POC
 
-A minimal end-to-end demo of the HTTP 402 + Pay.sh gateway pattern. An upstream Express API serves mock stock quotes with no payment logic whatsoever; the Pay.sh gateway sits in front and meters requests declaratively; a shell-script agent autonomously pays and fetches.
+[![Solana](https://img.shields.io/badge/Solana-9945FF?style=flat&logo=solana&logoColor=white)](https://solana.com)
+[![USDC](https://img.shields.io/badge/USDC-2775CA?style=flat&logoColor=white)](https://www.circle.com/usdc)
+[![pay.sh](https://img.shields.io/badge/pay.sh-gateway-black?style=flat)](https://pay.sh)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+
+A proof-of-concept for **cryptocurrency micropayments on the Solana blockchain**, powered by [pay.sh](https://pay.sh). Shows how HTTP 402 payment gating can be wired into agentic AI workflows, mobile apps, and any HTTP client — with zero payment logic required in the upstream API itself.
 
 ## What is pay.sh?
 
@@ -79,8 +84,8 @@ Stripe is built for the world where humans buy things. HTTP 402 + stablecoins is
 │                 │      │  • checks payment      │      │  • /v1/quote/:s │
 │  your "agent"   │      │  • proxies to upstream │      │  • /v1/health   │
 │                 │      │  • no business logic   │      │  • no payment   │
-└─────────────────┘      └──────────────────────┘      │    code at all  │
-                                                         └─────────────────┘
+│                 │      │                        │      │    code at all  │
+└─────────────────┘      └──────────────────────┘      └─────────────────┘
 ```
 
 The key idea: **the upstream API knows nothing about payments**. It's a plain HTTP server. The gateway sits in front of it and enforces payment rules declared in `provider.yml` — no code changes to the upstream required.
@@ -107,9 +112,8 @@ Client                  Gateway (1402)          Solana Localnet       Upstream (
   │   wallet, broadcasts it] │                        │                     │
   │                          │                        │                     │
   │── GET /v1/quote/AAPL ──▶ │                        │                     │
-  │   Authorization:          │── verify tx ─────────▶ │                     │
-  │     Payment id=… proof=… │                        │                     │
-  │                          │ ◀── confirmed ──────────│                     │
+  │   Authorization:          │── verify tx ─────────▶│                     │
+  │   Payment id=… proof=…   │◀── confirmed ───────────│                     │
   │                          │── proxy GET ──────────────────────────────▶ │
   │                          │ ◀── 200 + JSON ───────────────────────────── │
   │ ◀── 200 + JSON ──────────│                        │                     │
