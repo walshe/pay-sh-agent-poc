@@ -1,0 +1,19 @@
+{
+  "name": "pay-sh-upstream",
+  "version": "1.0.0",
+  "description": "Payment-unaware upstream API for pay.sh agent POC",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node --watch src/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
