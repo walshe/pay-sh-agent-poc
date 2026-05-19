@@ -76,16 +76,16 @@ Stripe is built for the world where humans buy things. HTTP 402 + stablecoins is
 ### The three moving parts
 
 ```
-┌─────────────────┐      ┌──────────────────────┐      ┌─────────────────┐
-│  client/run.sh  │      │   Pay.sh Gateway      │      │  upstream API   │
-│                 │      │   (provider.yml)       │      │  (Express/TS)   │
+┌─────────────────┐      ┌────────────────────────┐      ┌─────────────────┐
+│  client/run.sh  │      │  Pay.sh Gateway        │      │  upstream API   │
+│                 │      │  (provider.yml)        │      │  (Express/TS)   │
 │  pay --sandbox  │      │                        │      │                 │
 │  curl <url>     │      │  port 1402             │      │  port 3000      │
-│                 │      │  • checks payment      │      │  • /v1/quote/:s │
-│  your "agent"   │      │  • proxies to upstream │      │  • /v1/health   │
-│                 │      │  • no business logic   │      │  • no payment   │
-│                 │      │                        │      │    code at all  │
-└─────────────────┘      └──────────────────────┘      └─────────────────┘
+│                 │      │  - checks payment      │      │  /v1/quote/:s   │
+│  your "agent"   │      │  - proxies to upstream │      │  /v1/health     │
+│                 │      │  - no business logic   │      │  no payment     │
+│                 │      │                        │      │  code at all    │
+└─────────────────┘      └────────────────────────┘      └─────────────────┘
 ```
 
 The key idea: **the upstream API knows nothing about payments**. It's a plain HTTP server. The gateway sits in front of it and enforces payment rules declared in `provider.yml` — no code changes to the upstream required.
@@ -114,8 +114,8 @@ Client                  Gateway (1402)          Solana Localnet       Upstream (
   │── GET /v1/quote/AAPL ──▶ │                        │                     │
   │   Authorization:          │── verify tx ─────────▶│                     │
   │   Payment id=… proof=…   │◀── confirmed ───────────│                     │
-  │                          │── proxy GET ──────────────────────────────▶ │
-  │                          │ ◀── 200 + JSON ───────────────────────────── │
+  │                          │── proxy GET ────────────────────────────────▶│
+  │                          │◀── 200 + JSON ───────────────────────────────│
   │ ◀── 200 + JSON ──────────│                        │                     │
 ```
 
