@@ -487,6 +487,17 @@ The `tests/` directory contains an end-to-end test suite that spins up the full 
 | `GET /v1/quote/AAPL` (no payment) | Returns 402 with a `www-authenticate: Payment` header |
 | `pay --sandbox curl /v1/quote/AAPL` | Completes the payment and returns quote JSON with a `symbol` field |
 
+### Why Testcontainers
+
+[Testcontainers](https://testcontainers.com) is a library that manages real Docker containers from inside your test code. Rather than mocking services or maintaining a separate `docker-compose up` step, the test suite itself starts the containers in `beforeAll`, waits for them to be ready, runs the assertions, then tears everything down in `afterAll`.
+
+Key advantages over alternatives:
+
+- **No external setup** — no need to manually start services before running tests; the test is fully self-contained
+- **Real containers, not mocks** — tests run against the actual built images, catching issues that mocks would miss (wrong port bindings, missing env vars, glibc version mismatches, etc.)
+- **Isolated per run** — each test run gets fresh containers on a new bridge network; no state leaks between runs
+- **Works in CI out of the box** — GitHub Actions runners have Docker available, so the same test command works locally and in CI with no extra configuration
+
 ### How it works
 
 Both Docker images are **built locally** at test time from `upstream/Dockerfile` and `gateway/Dockerfile` — no registry pull required. The containers are wired together on an isolated bridge network so the gateway can reach the upstream by its service name.
