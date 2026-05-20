@@ -15,11 +15,14 @@ describe('E2E Payment Flow', () => {
   beforeAll(async () => {
     network = await new Network().start();
 
+    const e2eLabels = { 'com.paysh.suite': 'e2e', 'com.paysh.project': 'pay.sh' };
+
     upstreamContainer = await (await GenericContainer
       .fromDockerfile(path.join(PROJECT_ROOT, 'upstream'))
       .build())
       .withNetwork(network)
       .withNetworkAliases('upstream')
+      .withLabels({ ...e2eLabels, 'com.paysh.service': 'upstream' })
       .withWaitStrategy(Wait.forLogMessage('Upstream API listening'))
       .start();
 
@@ -28,6 +31,7 @@ describe('E2E Payment Flow', () => {
       .build())
       .withNetwork(network)
       .withExposedPorts(1402)
+      .withLabels({ ...e2eLabels, 'com.paysh.service': 'gateway' })
       .withWaitStrategy(Wait.forLogMessage('Running Payment debugger'))
       .start();
 
