@@ -1,0 +1,30 @@
+name: stock-quotes
+subdomain: stock-quotes
+title: "Stock Quotes API"
+description: "Mock stock quote data gated by per-request USDC payments on localnet."
+category: finance
+version: v1
+routing:
+  type: proxy
+  url: http://upstream:3000
+operator:
+  network: "localnet"
+  currencies:
+    usd: ["USDC"]
+
+endpoints:
+  - method: GET
+    path: "v1/health"
+    description: "Health check — free, no payment required."
+
+  - method: GET
+    path: "v1/quote/{symbol}"
+    resource: "quotes"
+    description: "Get mock stock quote for a symbol — $0.001 USDC per request."
+    metering:
+      dimensions:
+        - direction: usage
+          unit: requests
+          scale: 1
+          tiers:
+            - price_usd: 0.001

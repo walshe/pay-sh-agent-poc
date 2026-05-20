@@ -1,0 +1,14 @@
+{
+  "name": "pay-sh-e2e-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "testcontainers": "^10.0.0",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.0"
+  }
+}

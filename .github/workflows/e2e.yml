@@ -1,0 +1,36 @@
+name: E2E Tests
+
+on:
+  push:
+    paths:
+      - 'upstream/**'
+      - 'gateway/**'
+      - 'tests/**'
+      - '.github/workflows/e2e.yml'
+  pull_request:
+    paths:
+      - 'upstream/**'
+      - 'gateway/**'
+      - 'tests/**'
+      - '.github/workflows/e2e.yml'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pay CLI
+        run: |
+          curl -fsSL \
+            "https://github.com/solana-foundation/pay/releases/download/pay-v0.16.0/pay-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar -xz -C /usr/local/bin
+          chmod +x /usr/local/bin/pay
+          pay --version
+
+      - name: Run e2e tests
+        run: cd tests && npm ci && npm test
