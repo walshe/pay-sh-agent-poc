@@ -1,0 +1,12 @@
+[config]
+model = "deepseek/deepseek-chat"
+fallback_models = ["deepseek/deepseek-chat"]
+
+[github_action_config]
+auto_review = true    # review every PR automatically
+auto_describe = true  # generate PR description automatically
+auto_improve = false  # suggestions on demand only (/improve in a comment)
+
+[pr_reviewer]
+require_score_review = false
+num_code_suggestions = 4
