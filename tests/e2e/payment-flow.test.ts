@@ -89,13 +89,105 @@ describe('E2E Payment Flow', () => {
   });
 
   // The /quote endpoint costs money. A plain HTTP client that sends no payment
-  // proof should be rejected with 402 and told how to pay via the
-  // www-authenticate header (this is the HTTP 402 / MPP handshake).
+  // proof should be rejected with 402. The response contains everything a paying
+  // client needs to construct and sign a valid micropayment:
+  //
+  //   www-authenticate: Payment id="...", realm="MPP Payment", method="solana",
+  //                     intent="charge", request="<base64-json>", expires="..."
+  //
+  // The base64 `request` field decodes to a JSON object (the "payment token")
+  // that specifies the exact amount, token mint, recipient wallet, and a recent
+  // Solana blockhash to prevent replay attacks. The response body also carries
+  // human-readable pricing metadata for display purposes.
   it('GET /v1/quote/AAPL returns 402 without payment', async () => {
     const res = await fetch(`http://localhost:${gatewayPort}/v1/quote/AAPL`);
+
+    // ── Status & content-type ────────────────────────────────────────────────
     expect(res.status).toBe(402);
+    // The body is machine-readable JSON, not an HTML error page
+    expect(res.headers.get('content-type')).toMatch(/application\/json/);
+
+    // ── www-authenticate header structure ────────────────────────────────────
     const auth = res.headers.get('www-authenticate');
-    expect(auth).toMatch(/Payment/);
+    expect(auth).not.toBeNull();
+
+    // The scheme is "Payment" and the realm identifies it as MPP
+    expect(auth).toMatch(/^Payment /);
+    expect(auth).toMatch(/realm="MPP Payment"/);
+
+    // The payment method is Solana (not EVM, not Lightning, etc.)
+    expect(auth).toMatch(/method="solana"/);
+
+    // This is a charge (as opposed to a subscription or pre-auth)
+    expect(auth).toMatch(/intent="charge"/);
+
+    // Each challenge has a unique ID so the gateway can match the payment proof
+    // back to this specific request when the client retries
+    expect(auth).toMatch(/id="[^"]+"/);
+
+    // The challenge expires — clients must pay before this timestamp or start
+    // a fresh challenge
+    expect(auth).toMatch(/expires="20\d{2}-/); // ISO 8601 year prefix
+
+    // ── Decode the payment token ─────────────────────────────────────────────
+    // The `request` parameter is a base64-encoded JSON blob that tells the
+    // client exactly what to sign and send on-chain.
+    const requestMatch = auth!.match(/request="([^"]+)"/);
+    expect(requestMatch).not.toBeNull();
+    const paymentToken = JSON.parse(
+      Buffer.from(requestMatch![1], 'base64').toString('utf8')
+    ) as Record<string, unknown>;
+
+    // Amount is in the token's smallest unit (micro-USDC: 6 decimal places),
+    // so 1000 here = $0.001 USDC
+    expect(paymentToken.amount).toBe('1000');
+
+    // Currency is the on-chain token mint address (Solana base58 public key)
+    expect(typeof paymentToken.currency).toBe('string');
+    expect((paymentToken.currency as string).length).toBeGreaterThanOrEqual(32);
+
+    // Human-readable description surfaced from provider.yml
+    expect(paymentToken.description).toMatch(/USDC/);
+
+    // methodDetails carries the on-chain specifics needed to build the transaction
+    const md = paymentToken.methodDetails as Record<string, unknown>;
+
+    // USDC always has 6 decimal places on Solana
+    expect(md.decimals).toBe(6);
+
+    // Sandbox gateway runs against localnet (no real money involved)
+    expect(md.network).toBe('localnet');
+
+    // A recent blockhash is included so the signed transaction cannot be
+    // replayed after ~90 seconds (Solana's blockhash expiry window)
+    expect(typeof md.recentBlockhash).toBe('string');
+    expect((md.recentBlockhash as string).length).toBeGreaterThan(0);
+
+    // The SPL token program is the standard Solana fungible token runtime
+    expect(md.tokenProgram).toBe('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+
+    // Recipient is the gateway's Solana wallet — this is where the USDC lands
+    expect(typeof paymentToken.recipient).toBe('string');
+    expect((paymentToken.recipient as string).length).toBeGreaterThanOrEqual(32);
+
+    // ── Response body ────────────────────────────────────────────────────────
+    // The body gives human-readable context and machine-readable pricing so
+    // clients can display cost information before committing to payment.
+    const body = await res.json() as Record<string, unknown>;
+
+    expect(body.error).toBe('payment_required');
+    expect(body.message).toBe('This endpoint requires payment.');
+
+    // Protocol field confirms this gateway speaks MPP (not x402 or another scheme)
+    const payment = body.payment as Record<string, unknown>;
+    expect(payment.protocol).toBe('mpp');
+
+    // Pricing is expressed per-request in USD so clients can show the cost to
+    // the user before automatically paying
+    const pricing = body.pricing as { dimensions: Array<Record<string, unknown>> };
+    const dimension = pricing.dimensions[0];
+    expect(dimension.price_usd).toBe(0.001);
+    expect(dimension.unit).toBe('requests');
   });
 
   // The full happy path: `pay --sandbox curl` acts as a paying client.
