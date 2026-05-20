@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { GenericContainer, Network, Wait } from 'testcontainers';
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import path from 'path';
 import type { StartedTestContainer, StartedNetwork } from 'testcontainers';
+
+// Detect whether the pay CLI is available before any tests run. The third test
+// requires it; skipping early gives a readable message rather than a cryptic
+// Node.js spawn error.
+const PAY_AVAILABLE = spawnSync('pay', ['--version']).status === 0;
 
 // Resolve to the repo root so we can reference each service's Dockerfile regardless
 // of where the test process is launched from.
@@ -195,7 +200,7 @@ describe('E2E Payment Flow', () => {
   // on the Solana test network (sandbox = no real money), then retries the
   // request with a payment proof header. The gateway validates the proof and
   // proxies the request to the upstream, which returns the stock quote JSON.
-  it('pay --sandbox curl returns quote JSON after payment', () => {
+  it.skipIf(!PAY_AVAILABLE)('pay --sandbox curl returns quote JSON after payment', () => {
     const url = `http://localhost:${gatewayPort}/v1/quote/AAPL`;
     const output = execSync(`pay --sandbox curl "${url}"`, {
       encoding: 'utf8',
