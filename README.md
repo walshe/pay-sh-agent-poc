@@ -501,7 +501,7 @@ Both Docker images are **built locally** at test time from `upstream/Dockerfile`
 
 ```bash
 cd tests
-npm ci
+npm ci      # install exact dependencies from package-lock.json
 npm test
 ```
 
