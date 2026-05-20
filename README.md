@@ -475,6 +475,44 @@ From the user's perspective it's a single tap — their wallet pops up showing "
 
 ---
 
+## E2E Tests
+
+The `tests/` directory contains an end-to-end test suite that spins up the full stack — upstream API and pay gateway — using [Testcontainers](https://testcontainers.com/guides/getting-started-with-testcontainers-for-nodejs/) and verifies the 402 payment flow.
+
+### What it tests
+
+| Test | What it checks |
+|---|---|
+| `GET /v1/health` | Returns 200 `{"status":"ok"}` without any payment |
+| `GET /v1/quote/AAPL` (no payment) | Returns 402 with a `www-authenticate: Payment` header |
+| `pay --sandbox curl /v1/quote/AAPL` | Completes the payment and returns quote JSON with a `symbol` field |
+
+### How it works
+
+Both Docker images are **built locally** at test time from `upstream/Dockerfile` and `gateway/Dockerfile` — no registry pull required. The containers are wired together on an isolated bridge network so the gateway can reach the upstream by its service name.
+
+### Prerequisites
+
+- Docker running locally
+- `pay` CLI installed and on your `PATH` (the sandbox test calls `pay --sandbox curl`)
+- Node.js 20+
+
+### Run locally
+
+```bash
+cd tests
+npm ci
+npm test
+```
+
+The first run will take a couple of minutes while Docker builds the images. Subsequent runs reuse the build cache and are faster.
+
+### CI
+
+The tests run automatically on GitHub Actions (`.github/workflows/e2e.yml`) on every push or PR that touches `upstream/`, `gateway/`, or `tests/`. The workflow installs the `pay` Linux binary before running the suite.
+
+---
+
 ## Automated PR Reviews (PR-Agent)
 
 Pull requests are automatically reviewed by [PR-Agent](https://github.com/The-PR-Agent/pr-agent) using DeepSeek as the AI backend. On every PR open or update it will post a summary and a code review.
@@ -505,9 +543,18 @@ pay.sh/
 │   ├── .dockerignore
 │   ├── package.json
 │   └── tsconfig.json
+├── gateway/               # Pay.sh gateway container
+│   ├── Dockerfile         # Ubuntu 24.04 + pay Linux binary
+│   └── provider.test.yml  # Gateway config pointing to upstream service
+├── tests/                 # E2E test suite (Testcontainers + vitest)
+│   ├── e2e/
+│   │   └── payment-flow.test.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── vitest.config.ts
 ├── client/
 │   └── run.sh             # Shell agent — pays with pay --sandbox curl
-├── docker-compose.yml     # Compose stack (upstream + gateway placeholder)
+├── docker-compose.yml     # Compose stack: upstream + gateway
 ├── provider.yml           # Pay.sh gateway config — metering + routing
 └── README.md
 ```
