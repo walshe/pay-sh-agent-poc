@@ -183,6 +183,27 @@ The `pay` CLI supports both — it detects which protocol the gateway is using f
 cd upstream && npm install && cd ..
 ```
 
+## Docker / Compose
+
+> **Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (includes `docker compose`)
+
+Docker is the easiest way to run the upstream API. A single command builds and starts it:
+
+```bash
+docker compose up --build
+```
+
+This starts the `upstream` service (Express API on port 3000, internal to the compose network). The pay.sh gateway is not yet available as a Docker image — start it manually in a separate terminal (see [Three-Terminal Workflow](#three-terminal-workflow) below), then point it at the running container if needed.
+
+Once the stack is up, run the client as normal — the default `GATEWAY_URL` works unchanged:
+
+```bash
+./client/run.sh
+# GATEWAY_URL defaults to http://127.0.0.1:1402
+```
+
+The Docker workflow and the manual three-terminal workflow are interchangeable — use whichever you prefer. The Docker route removes the need to install Node.js or run `npm install` locally.
+
 ## Three-Terminal Workflow
 
 Open three terminal windows in the project root.
@@ -458,12 +479,15 @@ From the user's perspective it's a single tap — their wallet pops up showing "
 
 ```
 pay.sh/
-├── upstream/          # TypeScript/Express API — zero payment code
+├── upstream/              # TypeScript/Express API — zero payment code
 │   ├── src/index.ts
+│   ├── Dockerfile         # Multi-stage build → lean runtime image
+│   ├── .dockerignore
 │   ├── package.json
 │   └── tsconfig.json
 ├── client/
-│   └── run.sh         # Shell agent — pays with pay --sandbox curl
-├── provider.yml       # Pay.sh gateway config — metering + routing
+│   └── run.sh             # Shell agent — pays with pay --sandbox curl
+├── docker-compose.yml     # Compose stack (upstream + gateway placeholder)
+├── provider.yml           # Pay.sh gateway config — metering + routing
 └── README.md
 ```

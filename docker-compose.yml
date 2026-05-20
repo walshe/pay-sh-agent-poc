@@ -1,0 +1,21 @@
+services:
+  upstream:
+    build: ./upstream
+    networks:
+      - paysh-net
+
+  # TODO: Replace image with the official pay.sh gateway image when available.
+  # gateway:
+  #   image: TODO
+  #   ports:
+  #     - "1402:1402"
+  #   environment:
+  #     UPSTREAM_URL: http://upstream:3000
+  #   depends_on:
+  #     - upstream
+  #   networks:
+  #     - paysh-net
+
+networks:
+  paysh-net:
+    driver: bridge

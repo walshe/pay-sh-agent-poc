@@ -1,0 +1,27 @@
+name: PR-Agent
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  pr_agent_job:
+    runs-on: ubuntu-latest
+    name: Run PR-Agent
+    steps:
+      - name: PR-Agent
+        uses: the-pr-agent/pr-agent@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEEPSEEK__KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          CONFIG__MODEL: deepseek/deepseek-chat
+          CONFIG__FALLBACK_MODELS: '["deepseek/deepseek-chat"]'
+          GITHUB_ACTION_CONFIG.AUTO_REVIEW: "true"
+          GITHUB_ACTION_CONFIG.AUTO_DESCRIBE: "true"
+          GITHUB_ACTION_CONFIG.AUTO_IMPROVE: "false"
