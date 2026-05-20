@@ -475,6 +475,26 @@ From the user's perspective it's a single tap — their wallet pops up showing "
 
 ---
 
+## Automated PR Reviews (PR-Agent)
+
+Pull requests are automatically reviewed by [PR-Agent](https://github.com/The-PR-Agent/pr-agent) using DeepSeek as the AI backend. On every PR open or update it will post a summary and a code review.
+
+### What it does
+
+- **Auto-describe** — generates a structured PR description
+- **Auto-review** — posts an inline code review with findings and suggestions
+- **On-demand** — comment `/improve` on a PR to request additional improvement suggestions
+
+### Secret required
+
+The action needs a DeepSeek API key stored as a GitHub repository secret:
+
+| Secret name | Where to get it |
+|---|---|
+| `DEEPSEEK_API_KEY` | [platform.deepseek.com](https://platform.deepseek.com) → API Keys |
+
+Add it under **Settings → Secrets and variables → Actions → New repository secret**.
+
 ## Project Structure
 
 ```
